@@ -25,7 +25,7 @@ Tale Forgeは、インタラクティブなゲームブックシナリオを作�
 
 1. リポジトリをクローン:
 ```bash
-git clone https://github.com/yourusername/tale-forge.git
+https://github.com/wabisukecx/tale-forge.git
 cd tale-forge
 ```
 
