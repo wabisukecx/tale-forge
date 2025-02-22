@@ -56,7 +56,7 @@ def initialize_session_state():
 def main():
     """メイン関数"""
     st.set_page_config(layout="wide")
-    st.title("Tale Forge - ゲームブックシナリオエディタ")
+    st.title("Tale Forge")
 
     # セッション状態の初期化
     initialize_session_state()
