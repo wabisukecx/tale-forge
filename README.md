@@ -79,15 +79,19 @@ streamlit run app.py
 
 ```bash
 tale-forge/
-├── app.py             # メインアプリケーション
-├── editor.py          # シーン編集機能
-├── graph.py           # シーン関係図機能
-├── gameplay.py        # ゲームプレイ機能
-├── story_viewer.py    # ストーリービューア
-├── toml_export.py     # TOMLインポート/エクスポート
-├── requirements.txt   # 依存パッケージリスト
-├── scenario.toml      # 現在のシナリオデータ
-└── images/            # アップロードされた画像の保存先
+├── app.py                  # メインStreamlitアプリケーション
+├── character_sheet.py      # キャラクター管理モジュール
+├── editor.py               # シーン編集モジュール
+├── gameplay.py             # ゲームプレイ管理モジュール
+├── graph.py                # シーン関係図生成モジュール
+├── story_viewer.py         # ストーリービューアモジュール
+├── toml_export.py          # TOML形式のインポート/エクスポート
+├── settings.toml           # アプリケーション設定ファイル
+├── characters.toml         # キャラクター定義ファイル
+├── scenario.toml           # 現在のシナリオデータ
+├── README.md               # プロジェクト説明書
+├── requirements.txt        # 依存パッケージリスト
+└── images/                 # アップロードされた画像の保存先
 ```
 
 ## 📖 データ形式
@@ -107,14 +111,6 @@ image = "images/シーンID.拡張子"  # オプション
 - 各機能で包括的なエラーハンドリングを実装
 - エラー発生時に適切なエラーメッセージを表示
 - デバッグを容易にするためのログ出力
-
-## 🤝 貢献方法
-
-1. リポジトリをフォーク
-2. 新しいブランチを作成 (`git checkout -b feature/amazing-feature`)
-3. 変更をコミット (`git commit -m 'Add some amazing feature'`)
-4. ブランチにプッシュ (`git push origin feature/amazing-feature`)
-5. プルリクエストを作成
 
 ## 📄 ライセンス
 
