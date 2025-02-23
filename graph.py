@@ -1,11 +1,8 @@
 """
 シーン関係図機能を提供するモジュール
 """
-import logging
 import graphviz
 import streamlit as st
-
-logger = logging.getLogger(__name__)
 
 def show_graph_tab():
     """シーン関係図タブの表示"""
@@ -38,4 +35,3 @@ def show_graph_tab():
         
     except Exception as e:
         st.error(f"シーン関係図の生成に失敗しました: {str(e)}")
-        logger.error(f"Graph generation error: {str(e)}")

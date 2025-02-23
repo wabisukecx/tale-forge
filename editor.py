@@ -2,12 +2,9 @@
 シーン編集機能を提供するモジュール
 """
 import os
-import logging
 import streamlit as st
 from toml_export import export_to_toml, import_from_toml
 import re
-
-logger = logging.getLogger(__name__)
 
 def get_svg_dimensions(svg_content):
     """SVGファイルからviewBox属性を取得し、適切なサイズを計算する"""
@@ -40,10 +37,8 @@ def save_image(image_file, scene_id):
         with open(image_path, "wb") as f:
             f.write(image_file.getvalue())
 
-        logger.debug(f"Saved image for scene {scene_id}: {image_path}")
         return image_path
     except Exception as e:
-        logger.error(f"Error saving image: {str(e)}")
         st.error(f"画像の保存中にエラーが発生しました: {str(e)}")
         return None
 
@@ -53,10 +48,9 @@ def save_scenario_toml(df, image_data):
         toml_string = export_to_toml(df, image_data)
         with open("scenario.toml", "w", encoding='utf-8') as f:
             f.write(toml_string)
-        logger.debug("Saved scenario to scenario.toml")
         return True
     except Exception as e:
-        logger.error(f"Error saving scenario.toml: {str(e)}")
+        st.error(f"TOMLファイルの保存中にエラーが発生しました: {str(e)}")
         return False
 
 def show_editor_tab():
@@ -71,10 +65,8 @@ def show_editor_tab():
                 st.session_state.data = df
                 st.session_state.image_data.update(image_data)
                 st.success("TOMLファイルを正常にインポートしました！")
-                logger.debug("Successfully imported TOML file")
         except Exception as e:
             st.error(f"TOMLファイルの読み込みに失敗しました: {str(e)}")
-            logger.error(f"TOML import error: {str(e)}")
 
     # データエディター
     edited_df = st.data_editor(
@@ -92,10 +84,8 @@ def show_editor_tab():
             st.session_state.data = edited_df
             # 編集内容を反映したらscenario.tomlにも自動保存
             if save_scenario_toml(edited_df, st.session_state.image_data):
-                logger.debug("Updated session data and saved to scenario.toml")
                 st.success("データが更新され、scenario.tomlに保存されました！")
             else:
-                logger.debug("Updated session data but failed to save scenario.toml")
                 st.warning("データは更新されましたが、scenario.tomlの保存に失敗しました。")
 
     with col2:
@@ -107,10 +97,8 @@ def show_editor_tab():
                 file_name="scenario.toml",
                 mime="application/toml"
             )
-            logger.debug("TOML export button created")
         except Exception as e:
             st.error(f"TOMLの生成に失敗しました: {str(e)}")
-            logger.error(f"TOML export error: {str(e)}")
 
     # 画像管理セクション
     st.subheader("画像管理")
@@ -132,10 +120,8 @@ def show_editor_tab():
                 st.session_state.image_data[selected_scene] = saved_path
                 # 画像を追加したらscenario.tomlにも自動保存
                 if save_scenario_toml(edited_df, st.session_state.image_data):
-                    logger.debug("Updated image and saved to scenario.toml")
                     st.success("画像が追加され、scenario.tomlに保存されました！")
                 else:
-                    logger.debug("Updated image but failed to save scenario.toml")
                     st.warning("画像は追加されましたが、scenario.tomlの保存に失敗しました。")
 
     # 保存済み画像の表示
@@ -179,14 +165,11 @@ def show_editor_tab():
                             del st.session_state.image_data[scene_id]
                             # 画像を削除したらscenario.tomlにも自動保存
                             if save_scenario_toml(edited_df, st.session_state.image_data):
-                                logger.debug("Deleted image and saved to scenario.toml")
                                 st.success("画像が削除され、scenario.tomlが更新されました！")
                             else:
-                                logger.debug("Deleted image but failed to save scenario.toml")
                                 st.warning("画像は削除されましたが、scenario.tomlの更新に失敗しました。")
                             st.rerun()
                     else:
                         st.error(f"画像ファイルが見つかりません: {image_path}")
                 except Exception as e:
-                    logger.error(f"Error displaying image: {str(e)}")
                     st.error(f"画像の表示中にエラーが発生しました: {str(e)}")
