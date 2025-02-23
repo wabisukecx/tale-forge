@@ -1,6 +1,7 @@
 # Tale Forge (ゲームブック・シナリオエディタ)
 
 Tale Forgeは、インタラクティブなゲームブックシナリオを簡単に作成、編集、プレビューできる多機能なWebアプリケーションです。Streamlitを使用して構築され、直感的なユーザーインターフェースで物語の分岐を管理できます。
+https://tale-forge-qzyzsnmbgybsufqwbmtror.streamlit.app/から試すことができます。
 
 ## 🌟 主な特徴
 
