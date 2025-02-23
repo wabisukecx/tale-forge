@@ -1,179 +1,153 @@
-# character_sheet.py
-"""キャラクターシート関連の機能を提供するモジュール"""
-import random
 import streamlit as st
+import random
 import toml
 from pathlib import Path
 
-def display_dice(value):
-    """サイコロの目を表示する"""
-    dice_faces = {1: "⚀", 2: "⚁", 3: "⚂", 4: "⚃", 5: "⚄", 6: "⚅"}
-    return dice_faces.get(value, "")
+def load_settings():
+    """設定ファイルを読み込む"""
+    try:
+        settings_path = Path('settings.toml')
+        if settings_path.exists():
+            settings = toml.load(settings_path)
+            return settings.get('show_fear', False)
+    except Exception:
+        pass
+    return False
 
-def load_saved_characters():
-    """保存されているキャラクター情報を読み込む"""
-    save_file = Path("characters.toml")
-    if save_file.exists():
-        with open(save_file, "r", encoding="utf-8") as f:
-            return toml.load(f)
-    return {}
+def roll_dice(num_dice=2):
+    """指定された数のダイスを振る"""
+    return [random.randint(1, 6) for _ in range(num_dice)]
 
-def save_characters(characters):
-    """キャラクター情報を保存する"""
-    with open("characters.toml", "w", encoding="utf-8") as f:
-        toml.dump(characters, f)
-
-def save_current_character(character_name):
-    """現在のキャラクター情報を保存する"""
-    saved_characters = load_saved_characters()
-    saved_characters[character_name] = {
-        "name": character_name,
-        "skill_initial": st.session_state.get('skill_initial', 0),
-        "skill_current": st.session_state.get('skill_current', 0),
-        "stamina_initial": st.session_state.get('stamina_initial', 0),
-        "stamina_current": st.session_state.get('stamina_current', 0),
-        "luck_initial": st.session_state.get('luck_initial', 0),
-        "luck_current": st.session_state.get('luck_current', 0),
-        "fear_max": st.session_state.get('fear_max', 0),
-        "fear_current": st.session_state.get('fear_current', 0)
+def generate_initial_stats():
+    """初期能力値を生成"""
+    skill_rolls = roll_dice()
+    stamina_rolls = roll_dice()
+    luck_rolls = roll_dice()
+    fear_rolls = roll_dice() if st.session_state.show_fear else None
+    
+    stats = {
+        'skill': {'initial': sum(skill_rolls) + 6, 'current': sum(skill_rolls) + 6},
+        'stamina': {'initial': sum(stamina_rolls) + 12, 'current': sum(stamina_rolls) + 12},
+        'luck': {'initial': sum(luck_rolls) + 6, 'current': sum(luck_rolls) + 6},
     }
-    save_characters(saved_characters)
+    
+    rolls = {
+        'skill': skill_rolls,
+        'stamina': stamina_rolls,
+        'luck': luck_rolls,
+    }
 
-def load_character(character_data):
-    """保存されているキャラクター情報をロードする"""
-    for key, value in character_data.items():
-        st.session_state[key] = value
+    if st.session_state.show_fear:
+        stats['fear'] = {'max': sum(fear_rolls) + 3, 'current': 0}
+        rolls['fear'] = fear_rolls
+    
+    return stats, rolls
 
 def show_character_management():
-    """キャラクター管理UIの表示"""
-    col1, col2, col3, col4 = st.columns([2, 1, 1, 2])
+    """キャラクター作成UIの表示"""
+    # 設定の読み込みと保存
+    if 'show_fear' not in st.session_state:
+        st.session_state.show_fear = load_settings()
     
-    with col1:
-        character_name = st.text_input("キャラクター名", 
-                                     value=st.session_state.get('character_name', ''), 
-                                     label_visibility="collapsed")
-        st.session_state.character_name = character_name
+    if 'character' not in st.session_state:
+        initial_stats = {
+            'name': '',
+            'skill': {'initial': 0, 'current': 0},
+            'stamina': {'initial': 0, 'current': 0},
+            'luck': {'initial': 0, 'current': 0},
+        }
+        if st.session_state.show_fear:
+            initial_stats['fear'] = {'max': 0, 'current': 0}
+        st.session_state.character = initial_stats
 
-    with col2:
-        if st.button("🎲 生成", use_container_width=True):
-            generate_new_character()
+    # キャラクター名入力
+    st.session_state.character['name'] = st.text_input("キャラクター名", st.session_state.character['name'])
 
-    with col3:
-        if st.button("💾 保存", use_container_width=True) and character_name:
-            save_current_character(character_name)
+    # 能力値生成ボタン
+    if st.button("能力値を決定"):
+        stats, rolls = generate_initial_stats()
+        st.session_state.character.update(stats)
 
-    with col4:
-        show_character_selector()
-
-def generate_new_character():
-    """新しいキャラクターを生成する"""
-    st.session_state.is_generating = True
-    for key in list(st.session_state.keys()):
-        if key not in ['data', 'image_data', 'current_scene', 'is_generating']:
-            del st.session_state[key]
+def modify_stat(stat_name, value):
+    """能力値を変更（上限を超えない）"""
+    char = st.session_state.character
     
-    st.session_state.update({
-        'skill_initial': random.randint(1, 6) + 6,
-        'stamina_initial': sum(random.randint(1, 6) for _ in range(2)) + 12,
-        'luck_initial': random.randint(1, 6) + 6,
-        'fear_max': random.randint(1, 6) + 6,
-        'character_name': ""
-    })
-    
-    # 現在値を初期値と同じに設定
-    for stat in ['skill', 'stamina', 'luck']:
-        st.session_state[f'{stat}_current'] = st.session_state[f'{stat}_initial']
-    st.session_state.fear_current = 0
-    
-    st.rerun()
-
-def show_character_selector():
-    """保存済みキャラクター選択UIの表示"""
-    saved_characters = load_saved_characters()
-    if saved_characters:
-        character_options = ["選択してください"] + list(saved_characters.keys())
-        selected_character = st.selectbox("保存済み", character_options, 
-                                        label_visibility="collapsed")
-        if selected_character != "選択してください":
-            load_character(saved_characters[selected_character])
+    if stat_name == 'fear':
+        # 恐怖値は0から最大値の間
+        new_value = max(0, min(char['fear']['max'], char['fear']['current'] + value))
+        char['fear']['current'] = new_value
+    else:
+        # その他の能力値は初期値を超えない
+        current_max = char[stat_name]['initial']
+        new_value = min(current_max, char[stat_name]['current'] + value)
+        # 下限は0
+        new_value = max(0, new_value)
+        char[stat_name]['current'] = new_value
 
 def show_character_stats():
-    """キャラクターステータスUIの表示"""
-    stats_col1, stats_col2, stats_col3, stats_col4 = st.columns(4)
+    """キャラクターステータスの表示"""
+    if 'character' not in st.session_state:
+        return
+
+    char = st.session_state.character
+    if not char['name']:
+        return
     
-    stats = [
-        ("技能", "skill", 12),
-        ("体力", "stamina", 24),
-        ("幸運", "luck", 12),
-        ("恐怖", "fear", 12)
+    # 基本能力値の表示と調整
+    stats_to_show = [
+        ('skill', '技能値 (SKILL)'),
+        ('stamina', '体力値 (STAMINA)'),
+        ('luck', '幸運値 (LUCK)'),
     ]
     
-    columns = [stats_col1, stats_col2, stats_col3, stats_col4]
+    # 恐怖値が有効な場合は追加
+    if st.session_state.show_fear:
+        stats_to_show.append(('fear', '恐怖値 (FEAR)'))
     
-    for (stat_name, stat_key, max_value), col in zip(stats, columns):
-        with col:
-            show_stat_input(stat_name, stat_key, max_value)
-
-def show_stat_input(stat_name, stat_key, max_value):
-    """個別のステータス入力UIを表示"""
-    st.markdown(f"**{stat_name}**")
+    # 全ステータスを横に並べて表示
+    cols = st.columns(len(stats_to_show))
     
-    if stat_key != "fear":
-        initial = st.number_input(
-            "初期値",
-            key=f"{stat_key}_initial_display",
-            value=st.session_state.get(f'{stat_key}_initial', 0),
-            disabled=True,
-            min_value=0,
-            max_value=max_value
-        )
-        current = st.number_input(
-            "現在値",
-            key=f"{stat_key}_current_input",
-            value=st.session_state.get(f'{stat_key}_current', 0),
-            min_value=0,
-            max_value=initial
-        )
-        st.session_state[f'{stat_key}_current'] = current
-    else:
-        max_fear = st.number_input(
-            "上限",
-            key="fear_max_display",
-            value=st.session_state.get('fear_max', 0),
-            disabled=True,
-            min_value=0,
-            max_value=max_value
-        )
-        current = st.number_input(
-            "現在値",
-            key="fear_current_input",
-            value=st.session_state.get('fear_current', 0),
-            min_value=0,
-            max_value=max_fear
-        )
-        st.session_state.fear_current = current
+    for idx, (stat_name, label) in enumerate(stats_to_show):
+        with cols[idx]:
+            if stat_name == 'fear':
+                value = f"{char[stat_name]['current']}/{char[stat_name]['max']}"
+            else:
+                value = f"{char[stat_name]['current']}/{char[stat_name]['initial']}"
+            st.metric(label, value)
+            
+            # ±ボタンを横に並べる
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("-1", key=f"dec_{stat_name}"):
+                    modify_stat(stat_name, -1)
+                    st.rerun()
+            with col2:
+                if st.button("+1", key=f"inc_{stat_name}"):
+                    modify_stat(stat_name, 1)
+                    st.rerun()
 
 def show_dice_controls():
-    """サイコロ制御UIの表示"""
-    dice_col1, dice_col2, dice_col3 = st.columns([1, 1, 4])
+    """ダイスロール機能の表示"""
+    if 'character' not in st.session_state or not st.session_state.character['name']:
+        return
     
-    with dice_col1:
-        if st.button("1D6", use_container_width=True):
-            st.session_state.dice_results = [random.randint(1, 6)]
-            st.rerun()
+    col1, col2, col3 = st.columns(3)
     
-    with dice_col2:
-        if st.button("2D6", use_container_width=True):
-            st.session_state.dice_results = [random.randint(1, 6) for _ in range(2)]
-            st.rerun()
-
-    with dice_col3:
-        show_dice_results()
-
-def show_dice_results():
-    """サイコロ結果の表示"""
-    if 'dice_results' in st.session_state and st.session_state.dice_results:
-        results = st.session_state.dice_results
-        dice_faces = " ".join(display_dice(r) for r in results)
-        total = sum(results)
-        st.markdown(f"#### {dice_faces} = {total}")
+    with col1:
+        if st.button("戦闘ロール (2d6)"):
+            rolls = roll_dice()
+            total = sum(rolls)
+            st.write(f"🎲 {rolls[0]} + {rolls[1]} = {total}")
+    
+    with col2:
+        if st.button("幸運判定 (2d6)"):
+            rolls = roll_dice()
+            total = sum(rolls)
+            current_luck = st.session_state.character['luck']['current']
+            result = "成功！" if total <= current_luck else "失敗..."
+            st.write(f"🎲 {rolls[0]} + {rolls[1]} = {total} ({result})")
+    
+    with col3:
+        if st.button("d6を振る"):
+            roll = random.randint(1, 6)
+            st.write(f"🎲 {roll}")

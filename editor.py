@@ -53,6 +53,7 @@ def save_scenario_toml(df, image_data):
         st.error(f"TOMLファイルの保存中にエラーが発生しました: {str(e)}")
         return False
 
+# 関数をエクスポート
 def show_editor_tab():
     """シーン編集タブの表示"""
     # インポート機能
@@ -173,3 +174,6 @@ def show_editor_tab():
                         st.error(f"画像ファイルが見つかりません: {image_path}")
                 except Exception as e:
                     st.error(f"画像の表示中にエラーが発生しました: {str(e)}")
+
+# エクスポートを明示的に追加
+__all__ = ['show_editor_tab']
